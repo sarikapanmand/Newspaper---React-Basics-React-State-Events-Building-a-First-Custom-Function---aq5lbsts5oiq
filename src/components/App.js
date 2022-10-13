@@ -1,57 +1,57 @@
-import React, {Component, useState,useEffect} from "react";
-import Weatherinfo from "./Weatherinfo";
+import React, { Component, useState, useEffect } from "react";
 import '../styles/App.css';
 
 const App = () => {
-  const [searchValue, setSearchValue] = useState("Delhi");
-  const [tempInfo, setTempInfo] = useState({});
-
-  const getWeatherInfo = async () => {
-    try{
-      let url = `https://api.openweathermap.org/data/2.5/weather?q=${searchValue}&units=metric&appid=4721875125989469f55f6f67bccf42ac`
-
-      const res = await fetch(url);
-      const data = await res.json();
-
-      const { temp} = data.main;
-      const { main: weathermood } = data.weather[0];
-      const {name} = data;
-      const {country} = data.sys;
-
-        const myNewWeatherInfo = {
-          temp,
-          weathermood,
-          name,
-          country,
-        };
-
-        setTempInfo(myNewWeatherInfo);
-    } catch(error){
-      alert("City not Found ");
-      setSearchValue("");
-      //console.log(error);
-    }
-   };
+  const [weather, setWeather] = useState(JSON.stringify({}))
+  const [news, setNews] = useState(JSON.stringify({ title: "", description: "" }))
+  const [lat, setlati] = useState("")
+  const [long, setlongi] = useState("")
+  const [newlocation, setnewlocatio] = useState("")
 
   useEffect(() => {
-    getWeatherInfo();
-  },[]);
+    if (lat !== "" && long !== "")
+    // also runs if one of lat or long is updated
+    {
+      fetch(`http://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${long}&appid=${'da05b6e0fe788db7dcdc421c300214c1'}`, { method: "GET" }).then(e => e.json()).then(e => {
+        setWeather(JSON.stringify({ temperature: e.main.temp, location: e.coord }))
+      })
+      fetch(`https://gnews.io/api/v4/search?q=example&token=410db42779f25b2d81028050efe65502&max=5`).then(e => e.json()).then(e => {
+        // for(int )  
+        setNews(JSON.stringify({ key: "1", title: e.articles[0].title, description: e.articles[0].description }))
+      })
+    }
+
+  }, [lat, long])
+
+  const findFromCity = (e) => {
+    fetch(`http://api.openweathermap.org/data/2.5/weather?q=${e}&appid=${'da05b6e0fe788db7dcdc421c300214c1'}`, { method: "GET" }).then(e => e.json()).then(e => {
+      setWeather(JSON.stringify({ key: "2", temperature: e.main.temp, location: e.coord }))
+    }).catch(e => {
+      setWeather(JSON.stringify({ key: "3", message: "invalid location" }))
+    })
+  }
+
+  useEffect(() => {
+    navigator.geolocation.getCurrentPosition((e) => {
+      console.log("Got the Location", e);
+      setlati(e.coords.latitude)
+
+      setlongi(e.coords.longitude)
+    }, (e) => console.log('facing issue in getting the coordinates', e), {});
+  }, [])
+
+  const inputHandler = (e) => {
+    if (e.key === "Enter") {
+      findFromCity(document.getElementsByTagName('input')[0].value)
+    }
+  }
+
   return (
     <>
-    <div className="wrap">
-        <div className="search">
-            <input type="search"
-            placeholder='search...' autoFocus
-            id='search'
-            className='searchTerm' 
-            value={ searchValue} onChange={(e)=>setSearchValue(e.target.value)}  />
-          <button className='searchButton' type='button' onClick={getWeatherInfo}>Search</button>
-        </div>
-    </div>
-   
-      <Weatherinfo tempInfo={tempInfo}/>
-    </>
-  )
+      <input onKeyDown={inputHandler} />
+      {weather}
+      {news}
+    </>)
 }
 
 
